@@ -1,0 +1,211 @@
+{
+  "name": "LeadPilot - Integrated supplied Google Maps workflow",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "LeadPilot Discovery",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Niche",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Location",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "LeadCount",
+              "fieldType": "number",
+              "placeholder": "10"
+            },
+            {
+              "fieldLabel": "ActivityWindow",
+              "fieldType": "number",
+              "placeholder": "30"
+            },
+            {
+              "fieldLabel": "Mode",
+              "placeholder": "demo or live (default demo)"
+            }
+          ]
+        },
+        "options": {},
+        "formDescription": "Create a saved discovery. Demo uses synthetic data; live uses your configured Apify and Gemini credentials.",
+        "authentication": "basicAuth"
+      },
+      "id": "1ba48339-cb60-4893-8359-7563842c3920",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -384,
+        16
+      ],
+      "webhookId": "leadpilot-form"
+    },
+    {
+      "id": "550eb1a8-6eec-4995-a330-a7448cbc1a60",
+      "name": "Authenticated discovery webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -200
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "leadpilot-discovery",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "b7c92cef-6f7f-4b05-854f-2ab69f8d0bbe"
+    },
+    {
+      "id": "2a584ac6-8a48-41f9-97ff-072a87d9c280",
+      "name": "Normalize original form fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const input = $json.body ?? $json;\nconst mode = String(input.mode || input.Mode || 'demo').toLowerCase();\nif (!['demo','live'].includes(mode)) throw new Error('Mode must be demo or live');\nreturn [{json:{niche:input.niche ?? input.Niche, location:input.location ?? input.Location,\nlead_count:Number(input.lead_count || input.LeadCount || 10),\nactive_days:Number(String(input.active_days || input.ActivityWindow || 30).replace(/ days?$/i,'')),\nmin_reviews:Number(input.min_reviews ?? 30), min_rating:Number(input.min_rating ?? 2),\nmode, sync_sheets:input.sync_sheets === true, required_fields:input.required_fields ?? ['contact_email'], manual_research:true,\nrequest_key:'n8n-'+$execution.id}}];"
+      }
+    },
+    {
+      "id": "4a66f150-8796-4e88-86a1-1847f7f00430",
+      "name": "Create saved discovery",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        490,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/api/runs",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "id": "cf44e2df-a0f1-4a66-9155-a66d53420259",
+      "name": "Process saved stages every minute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        280
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "780f3ea0-cd08-4db4-9ad0-4a5563dbc8e6",
+      "name": "Process next saved stages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        280
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/api/tick",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {
+          "timeout": 300000
+        }
+      }
+    },
+    {
+      "id": "31211e69-8999-416e-bd90-b858ddc44341",
+      "name": "Setup instructions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        600,
+        220
+      ],
+      "parameters": {
+        "content": "## LeadPilot v2\nStart Python app.py + worker.py, or run.py (includes worker).\nAssign Header Auth X-API-Key using N8N_API_TOKEN from .env to both HTTP Request nodes. Protect form and webhook with credentials.\nScraping pauses for your Step 2 research click in the dashboard.\nExcel is created automatically; Google Sheets credentials are not required.\nPython run.py already schedules work; this n8n schedule is optional.",
+        "height": 380,
+        "width": 600
+      }
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Normalize original form fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authenticated discovery webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize original form fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize original form fields": {
+      "main": [
+        [
+          {
+            "node": "Create saved discovery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process saved stages every minute": {
+      "main": [
+        [
+          {
+            "node": "Process next saved stages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

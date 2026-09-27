@@ -1,0 +1,364 @@
+{
+  "name": "Original supplied Maps workflow (sanitized reference)",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "LeadGenV1",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Niche"
+            },
+            {
+              "fieldLabel": "Location"
+            },
+            {
+              "fieldLabel": "LeadCount"
+            },
+            {
+              "fieldLabel": "ActivityWindow"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1ba48339-cb60-4893-8359-7563842c3920",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -384,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "Run actor and get dataset",
+        "actorId": {
+          "__rl": true,
+          "value": "nwua9Gu5YrADL7ZDj",
+          "mode": "list",
+          "cachedResultName": "Google Maps Scraper (compass/crawler-google-places)",
+          "cachedResultUrl": "https://console.apify.com/actors/nwua9Gu5YrADL7ZDj/input"
+        },
+        "customBody": "={\n  \"searchStringsArray\": [\n    \"{{ $json.Niche }}\"\n  ],\n  \"locationQuery\": \"{{ $json.Location }}\",\n  \"maxCrawledPlacesPerSearch\": {{ Math.ceil(Number($json.LeadCount || 50) * 3) }},\n  \"language\": \"en\",\n  \"website\": \"withoutWebsite\",\n  \"placeMinimumStars\": \"two\",\n  \"skipClosedPlaces\": true,\n  \"scrapePlaceDetailPage\": true,\n  \"maxReviews\": 1,\n  \"reviewsSort\": \"newest\",\n  \"reviewsStartDate\": \"{{ $json.ActivityWindow || '30 days' }}\",\n  \"reviewsOrigin\": \"google\",\n  \"scrapeReviewsPersonalData\": false,\n  \"scrapeContacts\": false,\n  \"scrapeSocialMediaProfiles\": {\n    \"facebooks\": true,\n    \"instagrams\": false,\n    \"youtubes\": false,\n    \"tiktoks\": false,\n    \"twitters\": false\n  },\n  \"maximumLeadsEnrichmentRecords\": 0,\n  \"maxImages\": 0\n}"
+      },
+      "id": "d6643516-3d0e-48ca-8ed4-9d8c58af08d4",
+      "name": "Run an Actor and get dataset",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f7921a6f-b21f-4a8b-867f-42b664705133",
+              "name": "Business Name",
+              "value": "={{ $json.title || \"N/A\" }}",
+              "type": "string"
+            },
+            {
+              "id": "f21241fe-77eb-44fa-84c5-182b079610fb",
+              "name": "Contact Number ",
+              "value": "={{ $json.phone || \"N/A\"}}",
+              "type": "string"
+            },
+            {
+              "id": "126364de-a257-4da8-a594-b7afc39d083b",
+              "name": "Address",
+              "value": "={{ $json.address || \"N/A\"}}",
+              "type": "string"
+            },
+            {
+              "id": "83c6c46f-0566-4358-a35a-68be5352a6bc",
+              "name": "City",
+              "value": "={{ $json.city || \"N/A\"}}",
+              "type": "string"
+            },
+            {
+              "id": "89b14d32-f7c3-42c1-857c-d0a0dd9633db",
+              "name": "State",
+              "value": "={{ $json.state }}",
+              "type": "string"
+            },
+            {
+              "id": "b4730660-8fef-4e9d-8d75-9cb83c91ba41",
+              "name": "OwnerDescription",
+              "value": "={{ $json.ownerDescription || \"N/A\"}}",
+              "type": "string"
+            },
+            {
+              "id": "beac00d7-4f86-405f-bc68-d46c2a5a8f6e",
+              "name": "Rating",
+              "value": "={{ $json.totalScore || 0 }}",
+              "type": "string"
+            },
+            {
+              "id": "b97f947c-6f9f-4f39-8035-618a4d655e26",
+              "name": "Reviews",
+              "value": "={{ $json.reviewsCount || 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "5c0f27e4-146b-4553-993f-833b0c3f85c3",
+              "name": "Google Maps URL",
+              "value": "={{ $json.url || \"N/A\" }}",
+              "type": "string"
+            },
+            {
+              "id": "9087db8c-790a-4025-b0b9-9a1779f1b46e",
+              "name": "Website",
+              "value": "={{ $json.website || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "e9584833-804e-4bff-b799-60d5af73f987",
+              "name": "Facebook URL",
+              "value": "={{ $json.facebookUrl || $json.facebook || $json.facebooks?.[0] || \"N/A\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        16
+      ],
+      "id": "7f804d90-5d10-45cf-b420-90ca91bc143e",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Business Name": "={{ $json['Business Name'] }}",
+            "Contact Number ": "={{ $json['Contact Number '] }}",
+            "City": "={{ $json.City }}",
+            "Address": "={{ $json.Address }}",
+            "State": "={{ $json.State }}",
+            "OwnerDescription": "={{ $json.OwnerDescription }}",
+            "Rating": "={{ $json.Rating }}",
+            "Reviews": "={{ $json.Reviews }}",
+            "Google Maps URL": "={{ $json['Google Maps URL'] }}",
+            "Website": "={{ $json.Website }}",
+            "Facebook URL": "={{ $json['Facebook URL'] }}"
+          },
+          "matchingColumns": [
+            "Business Name"
+          ],
+          "schema": [
+            {
+              "id": "Business Name",
+              "displayName": "Business Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Contact Number ",
+              "displayName": "Contact Number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Address",
+              "displayName": "Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "City",
+              "displayName": "City",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "State",
+              "displayName": "State",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "OwnerDescription",
+              "displayName": "OwnerDescription",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Rating",
+              "displayName": "Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reviews",
+              "displayName": "Reviews",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Google Maps URL",
+              "displayName": "Google Maps URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Facebook URL",
+              "displayName": "Facebook URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        16
+      ],
+      "id": "984935d9-884b-47bd-ab54-2d47b50055ac",
+      "name": "Append or update row in sheet",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const target = Math.max(1, Number($('On form submission').first().json.LeadCount || 50));\n\nconst qualified = $input.all().filter((item) => {\n  const j = item.json ?? {};\n\n  const website = String(j.website ?? '').trim();\n  const normalizedWebsite = website.toLowerCase();\n  const hasNoWebsite =\n    !website ||\n    normalizedWebsite === 'null' ||\n    normalizedWebsite === 'n/a' ||\n    normalizedWebsite === 'undefined';\n\n  const rating = Number(j.totalScore ?? 0);\n  const reviewCount = Number(j.reviewsCount ?? 0);\n  const recentReviews = Array.isArray(j.reviews) ? j.reviews : [];\n  const hasRecentReview = recentReviews.length > 0;\n\n  const isClosed =\n    j.permanentlyClosed === true ||\n    j.temporarilyClosed === true ||\n    j.closed === true;\n\n  return (\n    hasNoWebsite &&\n    rating >= 2 &&\n    reviewCount >= 30 &&\n    hasRecentReview &&\n    !isClosed\n  );\n});\n\nreturn qualified.slice(0, target);"
+      },
+      "id": "2c21514d-2836-4717-bcdc-1f6c36cf15e4",
+      "name": "Filter Qualified & Active Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        16
+      ]
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Run an Actor and get dataset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run an Actor and get dataset": {
+      "main": [
+        [
+          {
+            "node": "Filter Qualified & Active Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Qualified & Active Leads": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
